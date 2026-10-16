@@ -1,5 +1,6 @@
 """Test caret."""
 from .. import util
+import time
 
 
 class TestCaretSmart(util.MdCase):
@@ -167,6 +168,16 @@ class TestCaretSmart(util.MdCase):
             ''',
             True
         )
+
+    def test_unclosed_caret_run_backtracking(self):
+        """Test that a long run of carets in an unclosed superscript does not cause catastrophic backtracking."""
+
+        start = time.perf_counter()
+        self.check_markdown(
+            '^a' + '^' * 42 + 'b',
+            '<p><sup>a</sup>' + '<sup>^</sup>' * 13 + '^^b</p>'
+        )
+        self.assertLess(time.perf_counter() - start, 1.0)
 
 
 class TestCaretNoSmart(util.MdCase):

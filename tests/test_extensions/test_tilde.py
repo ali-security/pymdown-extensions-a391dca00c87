@@ -1,5 +1,6 @@
 """Test tilde."""
 from .. import util
+import time
 
 
 class TestTildeSmart(util.MdCase):
@@ -167,6 +168,16 @@ class TestTildeSmart(util.MdCase):
             ''',
             True
         )
+
+    def test_unclosed_tilde_run_backtracking(self):
+        """Test that a long run of tildes in an unclosed subscript does not cause catastrophic backtracking."""
+
+        start = time.perf_counter()
+        self.check_markdown(
+            '~a' + '~' * 42 + 'b',
+            '<p><sub>a</sub>' + '<sub>~</sub>' * 13 + '~~b</p>'
+        )
+        self.assertLess(time.perf_counter() - start, 1.0)
 
 
 class TestTildeNoSmart(util.MdCase):

@@ -1,5 +1,6 @@
 """Test cases for BetterEm."""
 from .. import util
+import time
 
 
 class TestBetterNoSmart(util.MdCase):
@@ -156,6 +157,20 @@ class TestBetterNoSmart(util.MdCase):
             True
         )
 
+    def test_unclosed_star_runs_backtracking(self):
+        """Test that many unclosed asterisk runs do not cause catastrophic backtracking."""
+
+        start = time.perf_counter()
+        self.md.convert('*a' + '****b' * 26)
+        self.assertLess(time.perf_counter() - start, 1.0)
+
+    def test_unclosed_underscore_runs_backtracking(self):
+        """Test that many unclosed underscore runs do not cause catastrophic backtracking."""
+
+        start = time.perf_counter()
+        self.md.convert('_a' + '____b' * 26)
+        self.assertLess(time.perf_counter() - start, 1.0)
+
 
 class TestBetterSmartAll(util.MdCase):
     """Test escaping cases for BetterEm with smart enabled everywhere."""
@@ -223,6 +238,26 @@ class TestBetterSmartAll(util.MdCase):
             ''',
             True
         )
+
+    def test_unclosed_star_run_backtracking(self):
+        """Test that a long run of asterisks in unclosed emphasis does not cause catastrophic backtracking."""
+
+        start = time.perf_counter()
+        self.check_markdown(
+            '*a' + '*' * 42 + 'b',
+            '<p>*a' + '*' * 42 + 'b</p>'
+        )
+        self.assertLess(time.perf_counter() - start, 1.0)
+
+    def test_unclosed_underscore_run_backtracking(self):
+        """Test that a long run of underscores in unclosed emphasis does not cause catastrophic backtracking."""
+
+        start = time.perf_counter()
+        self.check_markdown(
+            '_a' + '_' * 42 + 'b',
+            '<p>_a' + '_' * 42 + 'b</p>'
+        )
+        self.assertLess(time.perf_counter() - start, 1.0)
 
     def test_complex_cases_underscore(self):
         """Test some complex cases for underscore."""

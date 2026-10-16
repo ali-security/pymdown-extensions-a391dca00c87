@@ -1,6 +1,7 @@
 """Test cases for MagicLink."""
 from .. import util
 import markdown
+import time
 import warnings
 
 
@@ -341,6 +342,45 @@ class TestMagicLinkCustom(util.MdCase):
 
         with self.assertRaises(ValueError):
             markdown.markdown('', extensions=extension, extension_configs=extension_configs)
+
+class TestMagicLinkBacktracking(util.MdCase):
+    """Test cases for catastrophic backtracking in bare link detection."""
+
+    extension = [
+        'pymdownx.magiclink'
+    ]
+
+    extension_configs = {}
+
+    def test_link_dot_run(self):
+        """Test that a long run of dots after a link host does not cause catastrophic backtracking."""
+
+        start = time.perf_counter()
+        self.check_markdown(
+            'http://a' + '.' * 42 + ' ',
+            '<p>http://a' + '.' * 42 + ' </p>'
+        )
+        self.assertLess(time.perf_counter() - start, 1.0)
+
+    def test_www_link_dot_run(self):
+        """Test that a long run of dots after a `www` link host does not cause catastrophic backtracking."""
+
+        start = time.perf_counter()
+        self.check_markdown(
+            'www.a' + '.' * 42 + ' ',
+            '<p>www.a' + '.' * 42 + ' </p>'
+        )
+        self.assertLess(time.perf_counter() - start, 1.0)
+
+    def test_link_with_dots(self):
+        """Test that hosts and paths containing dots are still linked as before."""
+
+        self.check_markdown(
+            'http://www.example.com/path.to/file.html. www.example.co.uk.',
+            '<p><a href="http://www.example.com/path.to/file.html">http://www.example.com/path.to/file.html</a>. '
+            '<a href="http://www.example.co.uk">www.example.co.uk</a>.</p>'
+        )
+
 
 class TestMagicLinkWarning(util.MdCase):
     """Test cases for social link shortener."""
