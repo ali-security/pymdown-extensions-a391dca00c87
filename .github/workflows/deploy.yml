@@ -1,12 +1,11 @@
 name: deploy
 
 on:
-  push:
-    tags:
-    - '*'
+  workflow_dispatch: {}
 
 jobs:
   build:
+    timeout-minutes: 30
     runs-on: ubuntu-latest
 
     steps:
@@ -16,6 +15,9 @@ jobs:
           python-version: 3.13
       - name: Build
         run: |
+          echo "hatchling==1.29.0" > "$RUNNER_TEMP/build-constraints.txt"
+          export PIP_CONSTRAINT="$RUNNER_TEMP/build-constraints.txt"
+          export PIP_BUILD_CONSTRAINT="$RUNNER_TEMP/build-constraints.txt"
           pip install --upgrade pip build
           python -m build -s -w
       - name: Store the distribution packages
@@ -23,8 +25,11 @@ jobs:
         with:
           name: python-package-distributions
           path: dist/
+          if-no-files-found: error
 
   pypi-publish:
+    if: false
+    timeout-minutes: 30
     needs:
       - build
     runs-on: ubuntu-latest
